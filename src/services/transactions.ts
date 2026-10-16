@@ -98,6 +98,35 @@ export function transactionToDraft(transaction: Transaction): TransactionDraft {
 }
 
 /**
+ * How a transaction moves the spendable balance, in minor units, signed.
+ *
+ * This is the single source of the sign shown next to a row, and it mirrors the
+ * rule the database aggregations use (see `NET_AMOUNT_EXPRESSION` and the
+ * dashboard balance): income adds; an expense subtracts; a saving into the pot
+ * subtracts, because the money left the spendable balance, while a withdrawal
+ * adds. A refund is an `expense` row that gives money back, so it counts
+ * *positively* — showing it as a subtraction would contradict the balance on
+ * the very same screen.
+ */
+export function balanceEffectMinorUnits(transaction: Transaction): number {
+  // Refunds are checked first: they are expenses that return money.
+  if (transaction.refundOfTransactionId !== null) {
+    return transaction.amountMinorUnits;
+  }
+
+  switch (transaction.type) {
+    case 'income':
+      return transaction.amountMinorUnits;
+    case 'expense':
+      return -transaction.amountMinorUnits;
+    case 'saving':
+      return transaction.savingDirection === 'out'
+        ? transaction.amountMinorUnits
+        : -transaction.amountMinorUnits;
+  }
+}
+
+/**
  * Validates and stores a draft.
  *
  * On success the saved row comes back, so the caller can show it or navigate

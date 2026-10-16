@@ -5,6 +5,7 @@ import type { IoniconName } from '@/components/icon-name';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { balanceEffectMinorUnits } from '@/services/transactions';
 import type { Category, Transaction } from '@/types/models';
 import { formatDateLabel } from '@/utils/dates';
 import { formatMinorUnits } from '@/utils/money';
@@ -26,31 +27,25 @@ const TYPE_ICONS: Record<Transaction['type'], IoniconName> = {
  * One transaction in the history list.
  *
  * The amount is shown signed the way it affects the *available balance*: income
- * adds, an expense subtracts, and moving money into savings subtracts (it left
- * the spendable balance) while moving it out adds. Colour repeats the meaning but
- * the sign and the label are always present, so the row is readable without it.
+ * adds, an expense subtracts, a refund adds back (it returns money), and moving
+ * money into savings subtracts (it left the spendable balance) while moving it
+ * out adds. Colour repeats the meaning but the sign and the label are always
+ * present, so the row is readable without it.
  */
 export function TransactionRow({ transaction, category, onPress }: TransactionRowProps) {
   const theme = useTheme();
+  // A refund is an expense row that gives money back, so it reads as income.
+  const isRefund = transaction.refundOfTransactionId !== null;
   // The theme token is `savings` (plural) while the transaction type is
   // `saving` (singular), so map explicitly rather than indexing by type name.
   const color =
-    transaction.type === 'income'
+    isRefund || transaction.type === 'income'
       ? theme.income
       : transaction.type === 'expense'
         ? theme.expense
         : theme.savings;
 
-  const direction =
-    transaction.type === 'income'
-      ? 1
-      : transaction.type === 'expense'
-        ? -1
-        : transaction.savingDirection === 'out'
-          ? 1
-          : -1;
-
-  const signedAmount = transaction.amountMinorUnits * direction;
+  const signedAmount = balanceEffectMinorUnits(transaction);
   const amountText = formatMinorUnits(signedAmount, { showSign: true });
 
   const contextLabel = transaction.type === 'saving'

@@ -8,7 +8,7 @@
  * than a raw minor-units number.
  */
 
-import { transactionToDraft } from '../transactions';
+import { balanceEffectMinorUnits, transactionToDraft } from '../transactions';
 import type { Transaction } from '@/types/models';
 
 const BASE: Transaction = {
@@ -78,5 +78,27 @@ describe('transactionToDraft', () => {
     const draft = transactionToDraft({ ...BASE, refundOfTransactionId: 'tx-original' });
 
     expect(draft.refundOfTransactionId).toBe('tx-original');
+  });
+});
+
+describe('balanceEffectMinorUnits', () => {
+  it('adds income to the balance', () => {
+    expect(balanceEffectMinorUnits({ ...BASE, type: 'income', needWant: null })).toBe(125050);
+  });
+
+  it('subtracts an expense from the balance', () => {
+    expect(balanceEffectMinorUnits(BASE)).toBe(-125050);
+  });
+
+  it('subtracts money paid into savings and adds a withdrawal back', () => {
+    const saving = { ...BASE, type: 'saving' as const, needWant: null };
+
+    expect(balanceEffectMinorUnits({ ...saving, savingDirection: 'in' })).toBe(-125050);
+    expect(balanceEffectMinorUnits({ ...saving, savingDirection: 'out' })).toBe(125050);
+  });
+
+  it('adds a refund back, because it returns money to the balance', () => {
+    // A refund is an expense row, but it must never read as spending.
+    expect(balanceEffectMinorUnits({ ...BASE, refundOfTransactionId: 'tx-original' })).toBe(125050);
   });
 });
