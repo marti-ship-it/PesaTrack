@@ -398,3 +398,61 @@ export async function summarizeTransactions(
     savingsOutMinorUnits: row?.savings_out_minor_units ?? 0,
   };
 }
+
+/** Net expense total for one category, as returned by `summarizeExpensesByCategory`. */
+export type CategoryExpenseTotal = {
+  categoryId: string;
+  /** Net of refunds, via `NET_AMOUNT_EXPRESSION`. Can legitimately be negative. */
+  netMinorUnits: number;
+};
+
+/**
+ * Sums expenses per category for the Budgets screen, net of refunds.
+ *
+ * This is the category-scoped sibling of `summarizeTransactions`, and it leans
+ * on the very same `NET_AMOUNT_EXPRESSION` so a refund can never be netted in
+ * one place and forgotten in the other. Two properties matter:
+ *
+ * - **`type = 'expense'` only.** Income and savings rows are filtered out by
+ *   the query, so a budget can never be inflated by money that arrived, nor by
+ *   money moved into a savings pot (a saving is a transfer between pots, not
+ *   spending).
+ * - **One row per category.** `GROUP BY category_id` means each transaction is
+ *   counted exactly once, so refunds and expenses can never be double-counted.
+ *
+ * A category with more refunds than spending in the period comes back negative
+ * on purpose; the caller decides how to present that (the service shows it as
+ * "money returned", not as spending). Categories with no expense rows are
+ * simply absent from the result.
+ */
+export async function summarizeExpensesByCategory(
+  db: SQLiteDatabase,
+  filter: Pick<TransactionFilter, 'from' | 'to'> = {}
+): Promise<CategoryExpenseTotal[]> {
+  const conditions: string[] = ["type = 'expense'"];
+  const parameters: (string | number)[] = [];
+
+  if (filter.from) {
+    conditions.push('date >= ?');
+    parameters.push(filter.from);
+  }
+  if (filter.to) {
+    conditions.push('date <= ?');
+    parameters.push(filter.to);
+  }
+
+  const rows = await db.getAllAsync<{ category_id: string; net_minor_units: number }>(
+    `SELECT
+       category_id,
+       SUM(${NET_AMOUNT_EXPRESSION}) AS net_minor_units
+     FROM transactions
+     WHERE ${conditions.join(' AND ')}
+     GROUP BY category_id;`,
+    parameters
+  );
+
+  return rows.map((row) => ({
+    categoryId: row.category_id,
+    netMinorUnits: row.net_minor_units,
+  }));
+}

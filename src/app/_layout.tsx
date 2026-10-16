@@ -90,6 +90,8 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             {/* The add/edit transaction form is presented as a modal over the tabs. */}
             <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
+            {/* The set/edit budget form is presented the same way. */}
+            <Stack.Screen name="budget-form" options={{ presentation: 'modal' }} />
           </Stack>
         </SQLiteProvider>
       </Suspense>
