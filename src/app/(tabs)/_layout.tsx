@@ -2,8 +2,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/hooks/use-theme';
 
 /**
  * The five primary sections of PesaTrack.
@@ -36,7 +35,9 @@ function tabIcon(filled: IoniconName, outline: IoniconName) {
 }
 
 export default function TabLayout() {
-  const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  // `useTheme` follows the stored appearance preference, so the tab bar matches
+  // the rest of the app as soon as the user changes it in Settings.
+  const theme = useTheme();
 
   return (
     <Tabs

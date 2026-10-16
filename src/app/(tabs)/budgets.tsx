@@ -227,7 +227,7 @@ export default function BudgetsScreen() {
           onNext={() => shiftMonth(1)}
         />
         <ThemedText type="small" themeColor="textMuted">
-          {`${formatDateLabel(data.range.start)} -?" ${formatDateLabel(data.range.end)}`}
+          {`${formatDateLabel(data.range.start)} – ${formatDateLabel(data.range.end)}`}
         </ThemedText>
 
         {!hasBudgets && !hasUnbudgeted ? (

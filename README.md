@@ -148,16 +148,21 @@ mistake in a screen cannot corrupt your records.
 
 ## Build status
 
-PesaTrack is built in milestones. Current state:
+PesaTrack is built in milestones. Current state — `[x]` finished, `[~]` partly finished, `[ ]` not started:
 
 - [x] **M1 — Foundation**: project setup, five-tab navigation, design system (light + dark)
 - [x] **M2 — Database**: SQLite schema with enforced constraints, migration runner, repositories,
   seeded Kenyan categories and payment methods, transaction validation rules, Jest tests
-- [ ] **M3 — Transaction forms**: income / expense / saving, dependent category dropdowns
-- [ ] **M4 — Dashboard**: real totals, available balance, safe-to-spend
-- [ ] **M5 — Budgets**: monthly category budgets, budget vs actual
+- [x] **M3 — Transaction forms**: income / expense / saving, dependent category dropdowns,
+  add / edit / delete, refunds, Need-or-Want on expenses
+- [x] **M4 — Dashboard**: real totals and available balance, financial-month switch, recent activity
+  (safe-to-spend arrives with the goals and obligations milestone)
+- [x] **M5 — Budgets**: monthly category budgets, budget vs actual, month stepper
+- [~] **M7 — Reports & insights**: money in/out, month-over-month comparison, category breakdown,
+  six-month trend and budget performance are done; charts are still to come
 - [ ] **M6 — Savings**: goals, contributions, progress
-- [ ] **M7 — Reports & insights**: charts, monthly comparisons
+- [x] **Settings & categories**: appearance (system / light / dark), financial month start day,
+  budget warning threshold, and adding / renaming / retiring categories
 - [ ] **M8 — Export & backup**: CSV, JSON backup/restore
 - [ ] **M9 — Hardening**: edge cases, empty states, accessibility
 - [ ] **M10 — Test run**: the named test scenarios on your phone
@@ -165,8 +170,8 @@ PesaTrack is built in milestones. Current state:
 
 Until a milestone is finished, the screens show honest empty states — never fake data.
 
-Tests run on the computer with `npm test`: money arithmetic, date handling, the transaction rules
-and the database schema itself. They need no phone and no emulator.
+Tests run on the computer with `npm test`: money arithmetic, dates, the transaction, budget, report
+and settings rules, and the database schema itself. They need no phone and no emulator.
 
 ---
 

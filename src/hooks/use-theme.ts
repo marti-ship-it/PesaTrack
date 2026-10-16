@@ -1,11 +1,17 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemePreferenceOrNull } from '@/hooks/theme-preference';
+import { resolveThemeName, type ThemeName } from '@/utils/theme';
 
-/** Light or dark, never anything else. */
-export type ThemeName = 'light' | 'dark';
+export type { ThemeName };
 
 /**
  * Returns the active color palette.
+ *
+ * The palette comes from the stored appearance preference (Settings →
+ * Appearance) when there is one, and otherwise from the device scheme — the
+ * rule lives in `resolveThemeName`, so every screen, the tab bar and the
+ * navigation chrome can never disagree about it.
  *
  * `useColorScheme()` can return `null` or `undefined` (a device or browser that
  * does not report a preference), and React Native Web uses `'unspecified'`.
@@ -16,14 +22,12 @@ export type ThemeName = 'light' | 'dark';
  * https://docs.expo.dev/guides/color-schemes/
  */
 export function useTheme() {
-  const scheme = useColorScheme();
-  const themeName: ThemeName = scheme === 'dark' ? 'dark' : 'light';
-
-  return Colors[themeName];
+  return Colors[useThemeName()];
 }
 
 /** Just the theme name, for places that need to branch (e.g. icon styles). */
 export function useThemeName(): ThemeName {
   const scheme = useColorScheme();
-  return scheme === 'dark' ? 'dark' : 'light';
+  const preference = useThemePreferenceOrNull()?.preference ?? 'system';
+  return resolveThemeName(preference, scheme);
 }
