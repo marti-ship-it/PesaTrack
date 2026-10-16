@@ -19,6 +19,7 @@ import {
 } from '@/db/repositories/transactions';
 import type { Transaction } from '@/types/models';
 import { todayIso } from '@/utils/dates';
+import { minorUnitsToInputString } from '@/utils/money';
 
 import {
   validateTransactionDraft,
@@ -69,6 +70,31 @@ export async function buildValidationContext(
     context.alreadyRefundedMinorUnits = Math.max(0, alreadyRefunded);
   }
   return context;
+}
+
+/**
+ * Turns a stored transaction back into a form draft, so the entry form can be
+ * reopened for editing.
+ *
+ * The amount becomes the editable string form (125050 -> "1250.50", whole
+ * amounts losing the trailing ".00"), and every other field is copied as-is.
+ * This is the exact inverse of the value `validateTransactionDraft` produces, so
+ * a transaction can round-trip through the form without changing.
+ */
+export function transactionToDraft(transaction: Transaction): TransactionDraft {
+  return {
+    type: transaction.type,
+    amount: minorUnitsToInputString(transaction.amountMinorUnits),
+    date: transaction.date,
+    description: transaction.description,
+    notes: transaction.notes,
+    categoryId: transaction.categoryId,
+    needWant: transaction.needWant,
+    paymentMethodId: transaction.paymentMethodId,
+    savingDirection: transaction.savingDirection,
+    savingsGoalId: transaction.savingsGoalId,
+    refundOfTransactionId: transaction.refundOfTransactionId,
+  };
 }
 
 /**

@@ -12,6 +12,8 @@ type EmptyStateProps = {
   message: string;
   /** Optional icon or illustration shown above the heading. */
   icon?: ReactNode;
+  /** Optional call to action, for example an "Add" button. */
+  action?: ReactNode;
 };
 
 /**
@@ -20,7 +22,7 @@ type EmptyStateProps = {
  * Using one component for all empty states keeps the copy tone and layout
  * consistent, and it guarantees the app never shows a blank screen.
  */
-export function EmptyState({ title, message, icon }: EmptyStateProps) {
+export function EmptyState({ title, message, icon, action }: EmptyStateProps) {
   return (
     <Card>
       <View style={styles.container}>
@@ -31,6 +33,7 @@ export function EmptyState({ title, message, icon }: EmptyStateProps) {
         <ThemedText type="small" themeColor="textSecondary" style={styles.text}>
           {message}
         </ThemedText>
+        {action ? <View style={styles.action}>{action}</View> : null}
       </View>
     </Card>
   );
@@ -44,5 +47,9 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: 'center',
+  },
+  action: {
+    alignSelf: 'stretch',
+    marginTop: Spacing.two,
   },
 });

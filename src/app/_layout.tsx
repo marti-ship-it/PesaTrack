@@ -88,6 +88,8 @@ export default function RootLayout() {
         <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDatabase} useSuspense>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
+            {/* The add/edit transaction form is presented as a modal over the tabs. */}
+            <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
           </Stack>
         </SQLiteProvider>
       </Suspense>
