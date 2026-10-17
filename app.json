@@ -36,7 +36,8 @@
         }
       ],
       "expo-sqlite",
-      "@react-native-vector-icons/ionicons"
+      "@react-native-vector-icons/ionicons",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

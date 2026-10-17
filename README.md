@@ -164,7 +164,8 @@ PesaTrack is built in milestones. Current state — `[x]` finished, `[~]` partly
   six-month trend and budget performance are done; charts are still to come
 - [x] **Settings & categories**: appearance (system / light / dark), financial month start day,
   budget warning threshold, and adding / renaming / retiring categories
-- [ ] **M8 — Export & backup**: CSV, JSON backup/restore
+- [x] **M8 — Export & backup**: transactions CSV, full JSON backup, and a restore that replaces
+  everything on the device
 - [ ] **M9 — Hardening**: edge cases, empty states, accessibility
 - [ ] **M10 — Test run**: the named test scenarios on your phone
 - [ ] **M11 — Build**: installable Android APK/AAB
@@ -181,7 +182,7 @@ and settings rules, and the database schema itself. They need no phone and no em
 - Records are stored **only on this device**.
 - No financial credentials (M-Pesa PIN, bank passwords) are ever requested.
 - Nothing is transmitted anywhere by the app.
-- You will be able to export (CSV) and back up (JSON) your data in a later milestone.
+- You can export your transactions as CSV, and back up or restore everything, from Settings.
 
 ### Seeing the database for yourself
 

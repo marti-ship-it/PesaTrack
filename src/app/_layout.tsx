@@ -122,6 +122,8 @@ export default function RootLayout() {
               {/* Savings goals: a pushed list, with its add/edit form as a modal. */}
               <Stack.Screen name="savings-goals" />
               <Stack.Screen name="savings-goal-form" options={{ presentation: 'modal' }} />
+              {/* Export & backup is a pushed screen reached from Settings. */}
+              <Stack.Screen name="backup" />
             </Stack>
           </AppChrome>
         </ThemePreferenceProvider>

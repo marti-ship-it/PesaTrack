@@ -323,6 +323,12 @@ export default function SettingsScreen() {
             PesaTrack keeps your records on this device only. There is no account, no server, and
             no internet connection required.
           </ThemedText>
+          <LinkRow
+            icon="folder-open-outline"
+            label="Export & backup"
+            detail="Save your transactions as CSV, or back up and restore everything."
+            onPress={() => router.push('/backup' as any)}
+          />
         </Card>
 
         <Card title="ABOUT">

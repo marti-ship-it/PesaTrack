@@ -262,6 +262,136 @@ CREATE INDEX idx_obligations_paid_due ON obligations (is_paid, due_date);
 `;
 
 /**
+ * The tables a JSON backup contains, and the columns it stores for each.
+ *
+ * Listed **parents before children**, which is the order a restore inserts them
+ * in; a restore deletes them in the reverse order. The list is explicit rather
+ * than read from `PRAGMA table_info` so that a future column addition is a
+ * deliberate decision about the backup format rather than a silent change to it.
+ *
+ * Every table is included — even `obligations`, which no screen writes yet — so
+ * a backup is a complete picture and nothing the schema holds is quietly lost.
+ */
+export type BackupTableSpec = {
+  name: string;
+  columns: readonly string[];
+};
+
+export const BACKUP_TABLES: readonly BackupTableSpec[] = [
+  {
+    name: 'categories',
+    columns: [
+      'id',
+      'name',
+      'type',
+      'icon',
+      'default_need_want',
+      'is_default',
+      'is_active',
+      'sort_order',
+      'created_at',
+    ],
+  },
+  {
+    name: 'payment_methods',
+    columns: ['id', 'name', 'is_default', 'is_active', 'sort_order', 'created_at'],
+  },
+  {
+    name: 'savings_goals',
+    columns: [
+      'id',
+      'name',
+      'target_minor_units',
+      'opening_balance_minor_units',
+      'target_date',
+      'is_archived',
+      'sort_order',
+      'created_at',
+      'updated_at',
+    ],
+  },
+  {
+    name: 'transactions',
+    columns: [
+      'id',
+      'type',
+      'amount_minor_units',
+      'date',
+      'description',
+      'notes',
+      'category_id',
+      'need_want',
+      'payment_method_id',
+      'saving_direction',
+      'savings_goal_id',
+      'refund_of_transaction_id',
+      'created_at',
+      'updated_at',
+    ],
+  },
+  {
+    name: 'monthly_budgets',
+    columns: [
+      'id',
+      'month_key',
+      'category_id',
+      'budgeted_minor_units',
+      'created_at',
+      'updated_at',
+    ],
+  },
+  {
+    name: 'monthly_budget_totals',
+    columns: ['id', 'month_key', 'budgeted_minor_units', 'created_at', 'updated_at'],
+  },
+  {
+    name: 'obligations',
+    columns: [
+      'id',
+      'name',
+      'amount_minor_units',
+      'due_date',
+      'is_paid',
+      'paid_transaction_id',
+      'notes',
+      'created_at',
+      'updated_at',
+    ],
+  },
+  {
+    name: 'settings',
+    columns: [
+      'id',
+      'display_name',
+      'currency_code',
+      'currency_symbol',
+      'financial_month_start_day',
+      'theme_preference',
+      'budget_warning_threshold_percent',
+      'default_transaction_sort',
+      'starting_balance_minor_units',
+      'savings_opening_balance_minor_units',
+      'onboarding_completed',
+      'created_at',
+      'updated_at',
+    ],
+  },
+];
+
+/**
+ * The value types a backup row holds. They are exactly what a JSON file can
+ * carry and what SQLite columns here use — text, integers and `NULL` — so a
+ * restored value needs no conversion on the way back in.
+ */
+export type BackupValue = string | number | null;
+
+/** One table row, keyed by its snake_case column names. */
+export type BackupRow = Record<string, BackupValue>;
+
+/** Every table's rows, keyed by table name. */
+export type BackupTables = Record<string, BackupRow[]>;
+
+/**
  * A category created on first launch, described without any database detail so
  * it can also be used by tests and by a future "reset to defaults" action.
  */
