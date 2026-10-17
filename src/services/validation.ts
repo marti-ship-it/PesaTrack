@@ -26,6 +26,10 @@ import type {
 import { isValidIsoDate } from '@/utils/dates';
 import { formatMinorUnits, parseAmountToMinorUnits } from '@/utils/money';
 
+// The wording of a refused withdrawal lives with the savings rules, so the
+// goal screens and the transaction form cannot drift apart on it.
+import { withdrawalError } from './savings';
+
 /** Longest allowed values, kept in step with the schema's CHECK constraints. */
 export const MAX_DESCRIPTION_LENGTH = 120;
 export const MAX_NOTES_LENGTH = 500;
@@ -92,6 +96,13 @@ export type TransactionValidationContext = {
   paymentMethods: readonly PaymentMethod[];
   /** Savings goals, when the savings feature is in use. */
   savingsGoals?: readonly SavingsGoal[];
+  /**
+   * How much the draft's chosen goal holds, when money is being withdrawn from
+   * it. A withdrawal may only take out money that is actually there, so the
+   * rule needs the balance; it is absent for contributions, where no amount is
+   * too large.
+   */
+  savingsGoalBalanceMinorUnits?: number;
   /**
    * Categories and payment methods already used by the transaction being
    * edited. They are allowed even if since retired — otherwise an old
@@ -201,6 +212,21 @@ export function validateTransactionDraft(
       const goalExists = context.savingsGoals.some((goal) => goal.id === draft.savingsGoalId);
       if (!goalExists) {
         errors.savingsGoalId = 'That savings goal is no longer available.';
+      } else if (
+        draft.savingDirection === 'out' &&
+        context.savingsGoalBalanceMinorUnits !== undefined &&
+        amountMinorUnits !== null &&
+        amountMinorUnits > 0
+      ) {
+        // A withdrawal cannot take out more than the goal holds, or the balance
+        // would read as negative saved money. The message sits under the amount,
+        // where the fix is, matching how an over-large refund is reported. The
+        // balance already excludes this transaction's own effect, so correcting
+        // an existing withdrawal upward is not blocked by its old amount.
+        const withdrawal = withdrawalError(amountMinorUnits, context.savingsGoalBalanceMinorUnits);
+        if (withdrawal) {
+          errors.amount = withdrawal;
+        }
       }
     }
   }

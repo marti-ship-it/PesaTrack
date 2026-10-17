@@ -10,6 +10,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { listCategories } from '@/db/repositories/categories';
 import { listPaymentMethods } from '@/db/repositories/payment-methods';
+import { contributedMinorUnitsForGoal, listSavingsGoals } from '@/db/repositories/savings-goals';
 import {
   deleteTransaction,
   getTransactionById,
@@ -40,17 +41,51 @@ export async function buildValidationContext(
   draft: TransactionDraft,
   currentTransaction?: Transaction | null
 ): Promise<TransactionValidationContext> {
-  const [categories, paymentMethods] = await Promise.all([
+  const [categories, paymentMethods, savingsGoals] = await Promise.all([
     listCategories(db, { includeInactive: true }),
     listPaymentMethods(db, { includeInactive: true }),
+    listSavingsGoals(db, { includeArchived: true }),
   ]);
 
   const context: TransactionValidationContext = {
     categories,
     paymentMethods,
+    // Archived goals are included on purpose: a transaction recorded against a
+    // goal that was later archived must still be editable. The picker offers
+    // only active goals, so a new transaction cannot choose a retired one.
+    savingsGoals,
     currentCategoryId: currentTransaction?.categoryId ?? null,
     currentPaymentMethodId: currentTransaction?.paymentMethodId ?? null,
   };
+
+  // A withdrawal can only take out money the goal holds, so the balance — its
+  // opening amount plus the net of its linked saving transactions — is loaded
+  // for that one goal. Loading it here keeps the rule itself pure and testable:
+  // the validator receives a number, not a database.
+  if (draft.type === 'saving' && draft.savingDirection === 'out' && draft.savingsGoalId) {
+    const goal = savingsGoals.find((item) => item.id === draft.savingsGoalId);
+
+    if (goal) {
+      const contributed = await contributedMinorUnitsForGoal(db, goal.id);
+      let balance = goal.openingBalanceMinorUnits + contributed;
+
+      // When the withdrawal being edited is itself linked to this goal, its own
+      // amount must not count against it, or raising the figure would be
+      // refused by the very row being corrected.
+      if (currentTransaction?.type === 'saving' && currentTransaction.savingsGoalId === goal.id) {
+        const ownEffect =
+          currentTransaction.savingDirection === 'out'
+            ? -currentTransaction.amountMinorUnits
+            : currentTransaction.amountMinorUnits;
+        balance -= ownEffect;
+      }
+
+      // A goal cannot hold less than nothing to withdraw from. Rows written
+      // before this rule existed may have gone negative; zero is the honest
+      // reading of "there is nothing to take out".
+      context.savingsGoalBalanceMinorUnits = Math.max(0, balance);
+    }
+  }
 
   if (draft.refundOfTransactionId) {
     context.refundedTransaction = await getTransactionById(db, draft.refundOfTransactionId);

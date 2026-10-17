@@ -1,11 +1,12 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { Button, SegmentedControl, type SegmentOption } from '@/components/form';
+import { ProgressBar } from '@/components/progress-bar';
 import { ScreenScaffold } from '@/components/screen-scaffold';
 import { ThemedText } from '@/components/themed-text';
 import { TransactionRow } from '@/components/transaction-row';
@@ -18,6 +19,7 @@ import {
   type DashboardData,
   type DashboardPeriod,
 } from '@/services/dashboard';
+import { getSavingsGoalsData, pickFeaturedGoal, type SavingsGoalsData } from '@/services/savings';
 import type { Category, Transaction } from '@/types/models';
 import { formatDateLabel } from '@/utils/dates';
 import { getErrorMessage } from '@/utils/errors';
@@ -75,6 +77,7 @@ export default function HomeScreen() {
 
   const [period, setPeriod] = useState<DashboardPeriod>('financial-month');
   const [data, setData] = useState<DashboardData | null>(null);
+  const [goals, setGoals] = useState<SavingsGoalsData | null>(null);
   const [recent, setRecent] = useState<Transaction[]>([]);
   const [categoriesById, setCategoriesById] = useState<Record<string, Category>>({});
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -88,10 +91,11 @@ export default function HomeScreen() {
   const load = useCallback(async () => {
     const currentId = ++requestId.current;
     try {
-      const [dashboard, rows, categories] = await Promise.all([
+      const [dashboard, rows, categories, goalData] = await Promise.all([
         getDashboardData(db, period),
         listTransactions(db, { limit: RECENT_LIMIT }),
         listCategories(db, { includeInactive: true }),
+        getSavingsGoalsData(db),
       ]);
       if (currentId !== requestId.current) {
         return;
@@ -99,6 +103,7 @@ export default function HomeScreen() {
       setData(dashboard);
       setRecent(rows);
       setCategoriesById(Object.fromEntries(categories.map((category) => [category.id, category])));
+      setGoals(goalData);
       setError(null);
       setStatus('ready');
     } catch (loadError) {
@@ -145,6 +150,7 @@ export default function HomeScreen() {
     const { totals } = data;
     const money = (amount: number) => formatMinorUnits(amount, { symbol: data.currencySymbol });
     const hasNoTransactions = data.transactionCount === 0;
+    const featuredGoal = goals ? pickFeaturedGoal(goals.active) : null;
 
     body = (
       <>
@@ -172,6 +178,47 @@ export default function HomeScreen() {
             Cash on hand from every record. Your savings pot is counted separately.
           </ThemedText>
         </Card>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open savings goals"
+          onPress={() => router.push('/savings-goals')}
+          style={({ pressed }) => (pressed ? styles.pressed : null)}>
+          <Card title="Savings goals">
+            {featuredGoal ? (
+              <>
+                <View style={styles.goalHead}>
+                  <ThemedText type="default" numberOfLines={1} style={styles.goalName}>
+                    {featuredGoal.goal.name}
+                  </ThemedText>
+                  <ThemedText
+                    type="smallBold"
+                    themeColor={featuredGoal.isReached ? 'income' : 'textSecondary'}>
+                    {`${Math.round(featuredGoal.percentOfTarget)}%`}
+                  </ThemedText>
+                </View>
+                <ProgressBar
+                  progress={featuredGoal.progress}
+                  color={featuredGoal.isReached ? theme.income : theme.savings}
+                />
+                <ThemedText type="small" themeColor="textSecondary">
+                  {`${money(featuredGoal.savedMinorUnits)} of ${money(
+                    featuredGoal.targetMinorUnits
+                  )}`}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textMuted">
+                  {`${
+                    featuredGoal.isReached ? 'Target reached' : 'Closest to its target'
+                  } · ${money(goals?.totals.savedMinorUnits ?? 0)} saved in total.`}
+                </ThemedText>
+              </>
+            ) : (
+              <ThemedText type="small" themeColor="textMuted">
+                No goals yet. Set a target, and watch it fill up as you save.
+              </ThemedText>
+            )}
+          </Card>
+        </Pressable>
 
         {hasNoTransactions ? (
           <EmptyState
@@ -250,5 +297,17 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     // Lets a long amount shrink instead of clipping on very narrow screens.
     flexShrink: 1,
+  },
+  goalHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  goalName: {
+    flexShrink: 1,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

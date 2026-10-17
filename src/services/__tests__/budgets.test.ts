@@ -4,8 +4,8 @@
  * `resolveBudgetStatus`, `buildBudgetRows` and `budgetAmountError` decide
  * everything the Budgets screen shows: which status a category has, how the
  * progress is clamped, which categories are "no budget set", and how the two
- * lists are ordered. They are pure, so the awkward cases -?" a category whose
- * refunds exceed its spending, a category with a budget but no spend -?" can be
+ * lists are ordered. They are pure, so the awkward cases — a category whose
+ * refunds exceed its spending, a category with a budget but no spend — can be
  * pinned down with fixed inputs instead of a database.
  */
 import type { Category, MonthlyBudget } from '@/types/models';

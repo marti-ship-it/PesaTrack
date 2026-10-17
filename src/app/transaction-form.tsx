@@ -21,6 +21,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { listCategories } from '@/db/repositories/categories';
 import { getPreferredPaymentMethod, listPaymentMethods } from '@/db/repositories/payment-methods';
+import { listSavingsGoals } from '@/db/repositories/savings-goals';
 import { getTransactionById } from '@/db/repositories/transactions';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -29,7 +30,14 @@ import {
   transactionToDraft,
 } from '@/services/transactions';
 import { createEmptyDraft, type FieldErrors, type TransactionDraft } from '@/services/validation';
-import type { Category, NeedWant, PaymentMethod, SavingDirection, TransactionType } from '@/types/models';
+import type {
+  Category,
+  NeedWant,
+  PaymentMethod,
+  SavingDirection,
+  SavingsGoal,
+  TransactionType,
+} from '@/types/models';
 import { addDays, formatDateWithWeekday, isValidIsoDate, todayIso } from '@/utils/dates';
 import { getErrorMessage } from '@/utils/errors';
 import { formatMinorUnits, parseAmountToMinorUnits } from '@/utils/money';
@@ -47,13 +55,28 @@ import { formatMinorUnits, parseAmountToMinorUnits } from '@/utils/money';
 export default function TransactionFormScreen() {
   const db = useSQLiteContext();
   const theme = useTheme();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{
+    id?: string;
+    savingsGoalId?: string;
+    savingDirection?: string;
+  }>();
   const editingId = typeof params.id === 'string' && params.id.length > 0 ? params.id : null;
   const isEditing = editingId !== null;
+
+  /**
+   * Set when the form is opened from a savings goal ("Add money" / "Withdraw").
+   * Those three decisions are already made, so the form can start part-filled.
+   */
+  const requestedGoalId =
+    typeof params.savingsGoalId === 'string' && params.savingsGoalId.length > 0
+      ? params.savingsGoalId
+      : null;
+  const requestedDirection: SavingDirection = params.savingDirection === 'out' ? 'out' : 'in';
 
   const [draft, setDraft] = useState<TransactionDraft>(() => createEmptyDraft(todayIso()));
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -68,9 +91,12 @@ export default function TransactionFormScreen() {
       try {
         // Include retired rows only when editing: an old transaction may use a
         // category that has since been retired, and it must still display.
-        const [categoryRows, paymentMethodRows, preferred] = await Promise.all([
+        const [categoryRows, paymentMethodRows, savingGoalRows, preferred] = await Promise.all([
           listCategories(db, { includeInactive: isEditing }),
           listPaymentMethods(db, { includeInactive: isEditing }),
+          // Retired goals only matter when editing a transaction that already
+          // points at one; a new transaction may only choose an active goal.
+          listSavingsGoals(db, { includeArchived: isEditing }),
           isEditing ? Promise.resolve(null) : getPreferredPaymentMethod(db),
         ]);
 
@@ -87,6 +113,26 @@ export default function TransactionFormScreen() {
             return;
           }
           nextDraft = transactionToDraft(existing);
+        } else if (
+          requestedGoalId &&
+          savingGoalRows.some((goal) => goal.id === requestedGoalId)
+        ) {
+          // Arriving from a goal leaves only the amount and the wording to type:
+          // the type, direction, goal and starting description are decided.
+          const goal = savingGoalRows.find((item) => item.id === requestedGoalId);
+          const savingsCategory = categoryRows.find((category) => category.type === 'saving');
+          const isWithdrawal = requestedDirection === 'out';
+
+          nextDraft = {
+            ...nextDraft,
+            type: 'saving',
+            categoryId: savingsCategory?.id ?? null,
+            savingDirection: requestedDirection,
+            savingsGoalId: requestedGoalId,
+            description: isWithdrawal
+              ? `Withdrawal from ${goal?.name ?? 'savings'}`
+              : `Contribution to ${goal?.name ?? 'savings'}`,
+          };
         }
 
         if (isCancelled) {
@@ -94,6 +140,7 @@ export default function TransactionFormScreen() {
         }
         setCategories(categoryRows);
         setPaymentMethods(paymentMethodRows);
+        setSavingsGoals(savingGoalRows);
         setDraft(nextDraft);
       } catch (error) {
         if (!isCancelled) {
@@ -110,7 +157,7 @@ export default function TransactionFormScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [db, editingId, isEditing]);
+  }, [db, editingId, isEditing, requestedDirection, requestedGoalId]);
 
   const typeOptions: readonly SegmentOption<TransactionType>[] = useMemo(
     () => [
@@ -156,6 +203,11 @@ export default function TransactionFormScreen() {
   const paymentMethodOptions = useMemo(
     () => paymentMethods.map((method) => ({ value: method.id, label: method.name })),
     [paymentMethods]
+  );
+
+  const savingsGoalOptions = useMemo(
+    () => savingsGoals.map((goal) => ({ value: goal.id, label: goal.name })),
+    [savingsGoals]
   );
 
   const parsedAmount = parseAmountToMinorUnits(draft.amount);
@@ -363,13 +415,26 @@ export default function TransactionFormScreen() {
               ) : null}
 
               {draft.type === 'saving' ? (
-                <SegmentedControl
-                  label="DIRECTION"
-                  options={savingDirectionOptions}
-                  value={draft.savingDirection}
-                  onChange={(savingDirection) => updateDraft({ savingDirection })}
-                  error={errors.savingDirection}
-                />
+                <>
+                  <SegmentedControl
+                    label="DIRECTION"
+                    options={savingDirectionOptions}
+                    value={draft.savingDirection}
+                    onChange={(savingDirection) => updateDraft({ savingDirection })}
+                    error={errors.savingDirection}
+                  />
+
+                  <SelectField
+                    label="SAVINGS GOAL (OPTIONAL)"
+                    value={draft.savingsGoalId}
+                    options={savingsGoalOptions}
+                    onChange={(savingsGoalId) => updateDraft({ savingsGoalId })}
+                    placeholder="Not for a particular goal"
+                    emptyMessage="No savings goals yet."
+                    error={errors.savingsGoalId}
+                    hint="A goal is how you track progress towards something specific."
+                  />
+                </>
               ) : null}
             </View>
 

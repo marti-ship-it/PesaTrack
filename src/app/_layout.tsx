@@ -119,6 +119,9 @@ export default function RootLayout() {
               {/* Category management is a pushed screen; its edit form is a modal. */}
               <Stack.Screen name="categories" />
               <Stack.Screen name="category-form" options={{ presentation: 'modal' }} />
+              {/* Savings goals: a pushed list, with its add/edit form as a modal. */}
+              <Stack.Screen name="savings-goals" />
+              <Stack.Screen name="savings-goal-form" options={{ presentation: 'modal' }} />
             </Stack>
           </AppChrome>
         </ThemePreferenceProvider>

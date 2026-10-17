@@ -1,7 +1,7 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { BudgetProgressBar } from '@/components/budget-progress-bar';
+import { ProgressBar } from '@/components/progress-bar';
 import type { IoniconName } from '@/components/icon-name';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -23,7 +23,7 @@ const FALLBACK_ICON: IoniconName = 'pricetag-outline';
  * The colour a budget status is drawn in.
  *
  * The meaning is always repeated in words by `statusLabel`, so the colour is a
- * reinforcement rather than the only signal -?" the same rule the transaction
+ * reinforcement rather than the only signal — the same rule the transaction
  * rows follow.
  */
 function statusColor(status: BudgetStatus, theme: ReturnType<typeof useTheme>): string {
@@ -99,7 +99,7 @@ export function BudgetRow({ row, currencySymbol, onPress }: BudgetRowProps) {
         </ThemedText>
       </View>
 
-      <BudgetProgressBar progress={row.progress} color={color} />
+      <ProgressBar progress={row.progress} color={color} />
 
       <View style={styles.footer}>
         <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>

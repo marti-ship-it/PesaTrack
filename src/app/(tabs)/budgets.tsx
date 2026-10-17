@@ -19,12 +19,12 @@ import { getErrorMessage } from '@/utils/errors';
 import { formatMinorUnits } from '@/utils/money';
 
 /**
- * Budgets -?" monthly spending limits per expense category.
+ * Budgets — monthly spending limits per expense category.
  *
  * Every figure comes from `getBudgetsData`: one query for the budgets, one for
  * the net spending per category, joined against the active and retired expense
  * categories. The screen reloads whenever it regains focus, so a budget set in
- * the modal -?" or a refund recorded in the transaction form -?" is reflected the
+ * the modal — or a refund recorded in the transaction form — is reflected the
  * moment the user comes back.
  *
  * Three things the screen deliberately does *not* do:

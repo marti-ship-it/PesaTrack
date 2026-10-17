@@ -1,4 +1,4 @@
-import type { Category, PaymentMethod, Transaction } from '@/types/models';
+import type { Category, PaymentMethod, SavingsGoal, Transaction } from '@/types/models';
 
 import {
   createEmptyDraft,
@@ -32,6 +32,20 @@ function paymentMethod(overrides: Partial<PaymentMethod> & Pick<PaymentMethod, '
     isActive: true,
     sortOrder: 0,
     createdAt: '2026-10-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function savingsGoal(overrides: Partial<SavingsGoal> & Pick<SavingsGoal, 'id'>): SavingsGoal {
+  return {
+    name: overrides.id,
+    targetMinorUnits: 5000000,
+    openingBalanceMinorUnits: 0,
+    targetDate: null,
+    isArchived: false,
+    sortOrder: 0,
+    createdAt: '2026-10-01T00:00:00.000Z',
+    updatedAt: '2026-10-01T00:00:00.000Z',
     ...overrides,
   };
 }
@@ -350,6 +364,84 @@ describe('validateTransactionDraft — savings', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors.savingsGoalId).toBeDefined();
+  });
+
+  describe('withdrawals', () => {
+    const EMERGENCY = savingsGoal({ id: 'goal-1', name: 'Emergency fund' });
+
+    function withdrawalDraft(
+      overrides: Partial<Parameters<typeof validateTransactionDraft>[0]> = {}
+    ) {
+      return draft({
+        type: 'saving',
+        categoryId: SAVINGS.id,
+        needWant: null,
+        savingDirection: 'out',
+        savingsGoalId: EMERGENCY.id,
+        description: 'Withdrawal from Emergency fund',
+        ...overrides,
+      });
+    }
+
+    function withdrawalContext(balanceMinorUnits: number) {
+      return {
+        ...baseContext(),
+        savingsGoals: [EMERGENCY],
+        savingsGoalBalanceMinorUnits: balanceMinorUnits,
+      };
+    }
+
+    it('accepts a withdrawal within the goal balance', () => {
+      // KSh 500 out of KSh 1,000 held.
+      const result = validateTransactionDraft(
+        withdrawalDraft({ amount: '500' }),
+        withdrawalContext(100000)
+      );
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('accepts taking out the exact balance', () => {
+      const result = validateTransactionDraft(
+        withdrawalDraft({ amount: '1000' }),
+        withdrawalContext(100000)
+      );
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('refuses more than the goal holds, and points at the amount', () => {
+      const result = validateTransactionDraft(
+        withdrawalDraft({ amount: '1000.01' }),
+        withdrawalContext(100000)
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.errors.amount).toContain('more than');
+      // The goal itself is valid; only the figure is wrong.
+      expect(result.errors.savingsGoalId).toBeUndefined();
+    });
+
+    it('never caps a contribution, however little the goal holds', () => {
+      const result = validateTransactionDraft(
+        withdrawalDraft({ savingDirection: 'in', amount: '100000' }),
+        withdrawalContext(0)
+      );
+
+      expect(result.ok).toBe(true);
+    });
+
+    it('leaves the balance rule out when the context carries no balance', () => {
+      // A caller that knows nothing about balances must not have its input
+      // rejected by a rule it never supplied the numbers for.
+      const result = validateTransactionDraft(withdrawalDraft({ amount: '1000000' }), {
+        ...baseContext(),
+        savingsGoals: [EMERGENCY],
+      });
+
+      expect(result.ok).toBe(true);
+    });
   });
 
   it('drops savings fields from income and expense rows', () => {

@@ -22,8 +22,8 @@ import { parseAmountToMinorUnits, percentageOf } from '@/utils/money';
  * Everything Home-style is avoided here: this module knows what a budget *is*,
  * how spent money compares to it, and how to load the two together. It renders
  * nothing. Splitting the pure rules (`resolveBudgetStatus`, `buildBudgetRows`)
- * from the loader (`getBudgetsData`) is what lets the awkward cases -?"
- * refund-only categories, custom financial-month starts, retired categories -?"
+ * from the loader (`getBudgetsData`) is what lets the awkward cases —
+ * refund-only categories, custom financial-month starts, retired categories —
  * be tested without a phone or a database.
  *
  * Two invariants carried over from the rest of the app:
@@ -94,7 +94,7 @@ export type BudgetsData = {
   rows: CategoryBudgetRow[];
   /** Expense categories with spending but no budget, biggest spender first. */
   unbudgeted: CategorySpendingRow[];
-  /** Sums over `rows` only -?" money with a budget to be measured against. */
+  /** Sums over `rows` only — money with a budget to be measured against. */
   totals: BudgetsTotals;
 };
 
@@ -104,7 +104,7 @@ export type BudgetsData = {
  * `exceeded` is strictly over; `reached` is exactly at the limit; `near` is at
  * or past the warning threshold but still under the limit; `under` is
  * everything else. Spending can legitimately be negative (a refund-heavy
- * period), which simply stays `under` -?" it is never clamped to zero, because
+ * period), which simply stays `under` — it is never clamped to zero, because
  * "you have more left than you budgeted" is the honest reading.
  */
 export function resolveBudgetStatus(
