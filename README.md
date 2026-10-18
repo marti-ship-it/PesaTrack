@@ -169,7 +169,8 @@ PesaTrack is built in milestones. Current state — `[x]` finished, `[~]` partly
   honest empty state, and the awkward cases (zero totals, refunds heavier than spending, goals
   past their target) are pinned down by tests
 - [ ] **M10 — Test run**: the named test scenarios on your phone
-- [ ] **M11 — Build**: installable Android APK/AAB
+- [~] **M11 — Build**: `eas.json` added, `android.versionCode` set to 1; ready for
+  `npx eas-cli@latest login`, EAS-managed keystore and building (APK/AAB) when you are logged in
 
 Until a milestone is finished, the screens show honest empty states — never fake data.
 
