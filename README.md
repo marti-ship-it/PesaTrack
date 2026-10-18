@@ -165,7 +165,9 @@ PesaTrack is built in milestones. Current state — `[x]` finished, `[~]` partly
   budget warning threshold, and adding / renaming / retiring categories
 - [x] **M8 — Export & backup**: transactions CSV, full JSON backup, and a restore that replaces
   everything on the device
-- [ ] **M9 — Hardening**: edge cases, empty states, accessibility
+- [x] **M9 — Hardening**: every control names itself for a screen reader, every screen has an
+  honest empty state, and the awkward cases (zero totals, refunds heavier than spending, goals
+  past their target) are pinned down by tests
 - [ ] **M10 — Test run**: the named test scenarios on your phone
 - [ ] **M11 — Build**: installable Android APK/AAB
 
