@@ -129,7 +129,7 @@ describe('serializeBackupFile and parseBackupFile', () => {
     const parsed = parseBackupFile(
       JSON.stringify(
         rawBackup({
-          tables: tablesWith({ categories: [{ id: 'cat-food', name: 123 as unknown as string }] }),
+          tables: tablesWith({ categories: [{ id: 'cat-food', name: true as unknown as string }] }),
         })
       )
     );
