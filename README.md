@@ -99,7 +99,7 @@ src/
 │   ├── migrations.ts     Versioned, transactional schema updates
 │   ├── errors.ts         Turns database errors into messages a screen can use
 │   └── repositories/     One module per table: the only code that writes SQL
-├── services/             Business rules (validation today, budgets and reports next)
+├── services/             Business rules: validation, budgets, reports, savings, backup
 └── utils/                Money maths, dates, id generation
 ```
 
@@ -136,7 +136,7 @@ The tables:
 | `monthly_budgets` | One budget per expense category per financial month |
 | `monthly_budget_totals` | Optional overall spending limit for a month |
 | `savings_goals` | Named goals such as "Emergency Fund" |
-| `obligations` | Known upcoming bills, used by Safe-to-Spend |
+| `obligations` | Upcoming bills. The table and its constraints exist, but no screen reads it yet |
 | `settings` | Single row: currency, financial month start day, warning threshold |
 
 The database enforces these rules itself — positive amounts, a Need/Want on expenses only, a
@@ -156,7 +156,6 @@ PesaTrack is built in milestones. Current state — `[x]` finished, `[~]` partly
 - [x] **M3 — Transaction forms**: income / expense / saving, dependent category dropdowns,
   add / edit / delete, refunds, Need-or-Want on expenses
 - [x] **M4 — Dashboard**: real totals and available balance, financial-month switch, recent activity
-  (safe-to-spend arrives with the goals and obligations milestone)
 - [x] **M5 — Budgets**: monthly category budgets, budget vs actual, month stepper
 - [x] **M6 — Savings**: goals, contributions through ordinary saving transactions, progress and
   archiving
@@ -186,27 +185,8 @@ and settings rules, and the database schema itself. They need no phone and no em
 
 ### Seeing the database for yourself
 
-There are two ways to confirm the database exists on your phone.
-
-**1. The terminal log (easiest).** The Home screen currently contains a small *temporary*
-diagnostic block that reads the database and prints what it finds. Start the app, then look at the
-terminal where `npm start` is running. You should see lines beginning with `[PesaTrack M2 check]`:
-
-```text
-[PesaTrack M2 check] schema version: 1
-[PesaTrack M2 check] rows: { transactions: 0, budgets: 0, goals: 0, obligations: 0 }
-[PesaTrack M2 check] income categories (5): [ 'Allowance', 'Salary', 'Business', 'Gift', 'Other Income' ]
-[PesaTrack M2 check] expense categories (14): [ 'Food & Groceries', 'Eating Out', 'Transport', … ]
-[PesaTrack M2 check] saving categories (1): [ 'Savings' ]
-[PesaTrack M2 check] payment methods (5): [ 'M-Pesa', 'Cash', 'Bank', 'Card', 'Other' ]
-[PesaTrack M2 check] OK — every table read succeeded.
-```
-
-`OK — every table read succeeded.` is the line that matters: it means the schema, the seed data
-and the settings row all exist on the device. If anything failed you would see `FAILED:` with the
-error instead. This block is temporary and is removed once you have seen that line.
-
-**2. The expo-sqlite dashboard (optional, more detail).** With the app running:
+The database is an ordinary SQLite file on your phone, and the dev server can open it in a browser
+so you can look inside.
 
 1. In the terminal running `npm start`, press **`Shift` + `M`** to open the **more tools** menu.
 2. Choose **Open expo-sqlite** and pick `pesatrack.db`. It opens in your browser.
@@ -229,8 +209,8 @@ your database. If you do open the JavaScript debugger and it reports *"No compat
 connected"*, it simply found no app attached to a dev server — almost always because `npm start`
 is not running, or Expo Go is not currently on the PesaTrack screen.
 
-**If the terminal prints nothing at all** for the diagnostic above, the dev server isn't running:
-the app on your phone is still showing a copy it loaded earlier. Run `npm start` and reload.
+**If nothing happens when you press `Shift` + `M`**, the dev server isn't running: the app on your
+phone is still showing a copy it loaded earlier. Run `npm start` and reload.
 
 ---
 

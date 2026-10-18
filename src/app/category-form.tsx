@@ -174,11 +174,6 @@ export default function CategoryFormScreen() {
     };
   }, [db, paramId]);
 
-  function updateName(next: string) {
-    setName(next);
-    setErrors((previous) => ({ ...previous, name: undefined }));
-  }
-
   function handleTypeChange(next: CategoryType) {
     setType(next);
     setErrors((previous) => ({ ...previous, type: undefined }));
@@ -269,8 +264,6 @@ export default function CategoryFormScreen() {
     );
   }
 
-  const title = isEdit ? 'Edit category' : 'New category';
-
   return (
     <ThemedView style={styles.flex}>
       <View style={styles.header}>
@@ -322,7 +315,7 @@ export default function CategoryFormScreen() {
                   label="TYPE"
                   options={TYPE_OPTIONS}
                   value={type}
-                  onChange={setType}
+                  onChange={handleTypeChange}
                   error={errors.type}
                   hint="Expense money leaves, income money arrives, saving moves money into a pot."
                 />
