@@ -24,7 +24,7 @@ export function Card({ title, style, children, ...rest }: CardProps) {
       style={[styles.card, { borderColor: theme.border }, style]}
       {...rest}>
       {title ? (
-        <ThemedText type="smallBold" themeColor="textSecondary">
+        <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
           {title}
         </ThemedText>
       ) : null}

@@ -34,6 +34,8 @@ export function TextField({
   return (
     <FieldShell label={label} error={error} hint={hint}>
       <TextInput
+        accessibilityLabel={error ? `${label}. ${error}` : label}
+        accessibilityHint={error ? undefined : hint}
         value={value}
         onChangeText={onChangeText}
         multiline={multiline}

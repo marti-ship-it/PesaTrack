@@ -42,7 +42,9 @@ export function ScreenScaffold({
 
   const heading = (
     <>
-      <ThemedText type="heading">{title}</ThemedText>
+      <ThemedText type="heading" accessibilityRole="header">
+        {title}
+      </ThemedText>
       {subtitle ? (
         <ThemedText type="small" themeColor="textSecondary">
           {subtitle}

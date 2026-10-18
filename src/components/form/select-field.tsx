@@ -57,6 +57,7 @@ export function SelectField({
     <FieldShell label={label} error={error} hint={hint}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={`${label}: ${selected ? selected.label : placeholder}`}
         accessibilityState={{ disabled, expanded: isOpen }}
         disabled={disabled}
         onPress={() => setIsOpen(true)}
@@ -89,14 +90,38 @@ export function SelectField({
         transparent
         animationType="fade"
         onRequestClose={() => setIsOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setIsOpen(false)}>
+        {/*
+         * Both wrappers are `accessible={false}` deliberately: a Pressable is an
+         * accessibility element by default, and an element swallows its children,
+         * which would hide every option from a screen reader. The close button in
+         * the sheet header is the deliberate way out.
+         */}
+        <Pressable
+          accessible={false}
+          style={styles.backdrop}
+          onPress={() => setIsOpen(false)}>
           {/* Swallows taps so pressing inside the sheet does not close it. */}
           <Pressable
+            accessible={false}
             style={[styles.sheet, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
             onPress={() => {}}>
-            <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sheetTitle}>
-              {label}
-            </ThemedText>
+            <View style={styles.sheetHeader}>
+              <ThemedText
+                type="smallBold"
+                themeColor="textSecondary"
+                accessibilityRole="header"
+                style={styles.sheetTitle}>
+                {label}
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                hitSlop={8}
+                onPress={() => setIsOpen(false)}
+                style={({ pressed }) => [styles.sheetClose, pressed ? styles.pressed : null]}>
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
+              </Pressable>
+            </View>
 
             {options.length === 0 ? (
               <ThemedText type="small" themeColor="textMuted" style={styles.sheetEmpty}>
@@ -188,6 +213,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
     maxHeight: '70%',
     gap: Spacing.two,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  sheetClose: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetTitle: {
     textTransform: 'uppercase',

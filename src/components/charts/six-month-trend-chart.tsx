@@ -73,9 +73,24 @@ export function SixMonthTrendChart({
     });
   }, [series, width]);
 
+  // A screen reader cannot read a canvas, and the chart carries no axis
+  // numbers, so it announces what it covers and where the figures are.
+  const chartLabel = useMemo(() => {
+    const first = series[0];
+    const last = series[series.length - 1];
+    if (!first || !last) {
+      return 'Money in and money out by month.';
+    }
+    return `Money in and money out per month, from ${first.label} to ${last.label}. The exact figures are listed below.`;
+  }, [series]);
+
   return (
     <View onLayout={onLayout}>
-      <View style={[styles.chartArea, { height }]}>
+      <View
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={chartLabel}
+        style={[styles.chartArea, { height }]}>
         <CartesianChart
           data={chartData}
           xKey="month"

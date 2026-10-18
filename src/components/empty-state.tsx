@@ -27,7 +27,7 @@ export function EmptyState({ title, message, icon, action }: EmptyStateProps) {
     <Card>
       <View style={styles.container}>
         {icon}
-        <ThemedText type="default" style={styles.text}>
+        <ThemedText type="default" style={styles.text} accessibilityRole="header">
           {title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={styles.text}>
