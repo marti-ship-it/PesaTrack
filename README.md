@@ -160,8 +160,8 @@ PesaTrack is built in milestones. Current state — `[x]` finished, `[~]` partly
 - [x] **M5 — Budgets**: monthly category budgets, budget vs actual, month stepper
 - [x] **M6 — Savings**: goals, contributions through ordinary saving transactions, progress and
   archiving
-- [~] **M7 — Reports & insights**: money in/out, month-over-month comparison, category breakdown,
-  six-month trend and budget performance are done; charts are still to come
+- [x] **M7 — Reports & insights**: money in/out, month-over-month comparison, category breakdown
+  with a donut chart, six-month trend chart and budget performance
 - [x] **Settings & categories**: appearance (system / light / dark), financial month start day,
   budget warning threshold, and adding / renaming / retiring categories
 - [x] **M8 — Export & backup**: transactions CSV, full JSON backup, and a restore that replaces

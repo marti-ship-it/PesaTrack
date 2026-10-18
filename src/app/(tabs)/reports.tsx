@@ -6,6 +6,11 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { BudgetRow } from '@/components/budget-row';
 import { Card } from '@/components/card';
+import {
+  CategoryBreakdownPie,
+  breakdownSwatchColor,
+} from '@/components/charts/category-breakdown-pie';
+import { SixMonthTrendChart } from '@/components/charts/six-month-trend-chart';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/form';
 import { ScreenScaffold } from '@/components/screen-scaffold';
@@ -255,19 +260,28 @@ export default function ReportsScreen() {
         <Card title="Where the money went">
           {hasSpending ? (
             <>
-              {data.breakdown.map((row) => (
+              <CategoryBreakdownPie breakdown={data.breakdown} />
+              {data.breakdown.map((row, index) => (
                 <View key={row.categoryId} style={styles.summaryRow}>
-                  <View style={styles.summaryLabelWrap}>
-                    <ThemedText type="default" numberOfLines={1}>
-                      {row.name}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textMuted">
-                      {row.netMinorUnits < 0
-                        ? 'Money returned'
-                        : row.sharePercent !== null
-                          ? `${Math.round(row.sharePercent)}% of spending`
-                          : ''}
-                    </ThemedText>
+                  <View style={styles.breakdownLabelGroup}>
+                    <View
+                      style={[
+                        styles.breakdownSwatch,
+                        { backgroundColor: breakdownSwatchColor(theme, data.breakdown, index) },
+                      ]}
+                    />
+                    <View style={styles.summaryLabelWrap}>
+                      <ThemedText type="default" numberOfLines={1}>
+                        {row.name}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textMuted">
+                        {row.netMinorUnits < 0
+                          ? 'Money returned'
+                          : row.sharePercent !== null
+                            ? `${Math.round(row.sharePercent)}% of spending`
+                            : ''}
+                      </ThemedText>
+                    </View>
                   </View>
                   <ThemedText
                     type="default"
@@ -290,22 +304,27 @@ export default function ReportsScreen() {
 
         <Card title="Last six months">
           {hasSeriesData ? (
-            data.series.map((entry) => (
-              <View key={entry.monthKey} style={styles.summaryRow}>
-                <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLabelWrap}>
-                  {entry.label}
-                </ThemedText>
-                <ThemedText type="small" numberOfLines={1} style={styles.seriesAmounts}>
-                  {`${formatMinorUnits(entry.totals.incomeMinorUnits, {
-                    symbol: data.currencySymbol,
-                    hideDecimals: true,
-                  })} in · ${formatMinorUnits(entry.totals.expensesNetMinorUnits, {
-                    symbol: data.currencySymbol,
-                    hideDecimals: true,
-                  })} out`}
-                </ThemedText>
+            <>
+              <View style={styles.chartContainer}>
+                <SixMonthTrendChart series={data.series} currencySymbol={data.currencySymbol} />
               </View>
-            ))
+              {data.series.map((entry) => (
+                <View key={entry.monthKey} style={styles.summaryRow}>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.summaryLabelWrap}>
+                    {entry.label}
+                  </ThemedText>
+                  <ThemedText type="small" numberOfLines={1} style={styles.seriesAmounts}>
+                    {`${formatMinorUnits(entry.totals.incomeMinorUnits, {
+                      symbol: data.currencySymbol,
+                      hideDecimals: true,
+                    })} in · ${formatMinorUnits(entry.totals.expensesNetMinorUnits, {
+                      symbol: data.currencySymbol,
+                      hideDecimals: true,
+                    })} out`}
+                  </ThemedText>
+                </View>
+              ))}
+            </>
           ) : (
             <ThemedText type="small" themeColor="textMuted">
               No activity in the last six months yet.
@@ -377,6 +396,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     gap: 2,
   },
+  breakdownSwatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    flexShrink: 0,
+  },
+  breakdownLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    flexShrink: 1,
+  },
   summaryAmount: {
     fontWeight: '700',
     textAlign: 'right',
@@ -385,5 +416,8 @@ const styles = StyleSheet.create({
   seriesAmounts: {
     textAlign: 'right',
     flexShrink: 1,
+  },
+  chartContainer: {
+    marginTop: Spacing.two,
   },
 });
